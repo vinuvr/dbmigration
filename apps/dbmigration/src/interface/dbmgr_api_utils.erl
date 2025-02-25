@@ -1268,6 +1268,7 @@ cassandra_put_query(Table, Map) ->
                  fun(K, V, {Q1, Q2}) ->
                      K1 = to(binary, K),
                      case K1 of
+                       <<"size">> ->  without_quotes(Q1, Q2, K, V);
                        <<"is_", _/binary>> -> without_quotes(Q1, Q2, K, V);
                        <<"uuid">> -> without_quotes(Q1, Q2, K, V);
                        Other ->

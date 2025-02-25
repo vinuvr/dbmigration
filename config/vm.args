@@ -1,0 +1,6 @@
+-sname dbmigration
+
+-setcookie dbmigration_cookie
+
++K true
++A30

@@ -92,7 +92,7 @@ do_start_dbmigration(Args) ->
                                               ,is_group => Group
                                               ,is_seen => IsSeen
                                               ,a_ctime => Actime
-                                              ,body => jsx:encode(Body)
+                                              ,body => base64:encode(jsx:encode(Body))
                                               ,plaintext => Plaintext})
               end),
         spawn(fun() -> add_pinned_messages(dbmgr_api_utils:filtered_map(
@@ -226,7 +226,7 @@ jsx_encode(Data) -> jsx:encode(Data).
 %   {UUID, _NewState} = uuid:get_v1(State),
 %   list_to_binary(uuid:uuid_to_string(UUID)).
 
-get_plaintext(#{<<"plainText">> := Plaintext})  -> Plaintext;
+get_plaintext(#{<<"plainText">> := Plaintext})  -> base64:encode(Plaintext);
 get_plaintext(_) -> undefined.
 
 year_month(Actime) ->

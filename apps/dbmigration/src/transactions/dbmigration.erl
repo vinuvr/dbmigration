@@ -73,9 +73,10 @@ do_start_dbmigration(Args) ->
           ,reactions := Reactions, reply_to := Replyto
           ,schedule_time := ScheduleTime, seen := Seen
           ,status := Status, tenant := Tenant
-          ,to := To, type := Type})->
+          ,to := To, type := Type, uuid := MsgUUID})->
         #{<<"plainText">> := Plaintext} = Body,
         Uuid = dbmgr_uuid:time_uuid(),
+        lager:info("3333333333333333333333333333333333333 ~p msguuid ~p",[Uuid, MsgUUID ]),
         CID = conversation_id(To, From),
         spawn(fun() ->
                   add_to_chat_messages_core(#{tenant_id => Tenant
@@ -94,7 +95,6 @@ do_start_dbmigration(Args) ->
                                               ,body => jsx:encode(Body)
                                               ,plaintext => Plaintext})
               end),
-
         spawn(fun() -> add_pinned_messages(dbmgr_api_utils:filtered_map(
                                              #{conversation_id => CID
                                                ,message_id => Uuid

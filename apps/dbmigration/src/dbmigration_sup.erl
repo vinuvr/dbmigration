@@ -29,7 +29,17 @@ init([]) ->
     SupFlags = #{strategy => one_for_all,
                  intensity => 0,
                  period => 1},
-    ChildSpecs = [#{id => dbmgr_uuid, start => {dbmgr_uuid, start_link, []}}],
+    ChildSpecs = [#{id => dbmgr_uuid, start => {dbmgr_uuid, start_link, []}}
+                  ,#{id => dbmgr_if_cassandra_node_sofo, start => {dbmgr_if_cassandra_node_sofo, start_link, []}} 
+                  ,#{id => dbmgr_if_cassandra_nodes, start => {dbmgr_if_cassandra_nodes, start_link, []}}
+                  ,#{id=> dbmgr_cassandra, start => {dbmgr_cassandra, start_link, []}}
+                  ,#{id => dbmigration, start => {dbmigration, start_link, []}} 
+                  %%dbmgr_cassandra:start_link().
+                  %%dbmgr_if_cassandra_nodes:start_link().
+
+                   %%dbmgr_if_cassandra_node_sofo:start_link().    
+
+],
     {ok, {SupFlags, ChildSpecs}}.
 
 %% internal functions

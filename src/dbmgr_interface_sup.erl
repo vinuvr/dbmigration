@@ -36,6 +36,7 @@ init([]) ->
                                                                  start_link, []}, type => supervisor}
                ,#{id => dbmgr_if_cassandra_nodes, start => {dbmgr_if_cassandra_nodes, start_link, []}}
                ,#{id => dbmgr_cassandra, start => {dbmgr_cassandra, start_link, []}}
+               ,#{id => dbmigration, start => {dbmigration, start_link, []}}
 
                ],
   {ok, {SupFlags, ChildSpecs}}.

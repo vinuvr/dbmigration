@@ -74,7 +74,8 @@ do_start_dbmigration(Args) ->
           ,schedule_time := ScheduleTime, seen := Seen
           ,status := Status, tenant := Tenant
           ,to := To, type := Type, uuid := _MsgUUID})->
-        #{<<"plainText">> := Plaintext} = Body,
+        %#{<<"plainText">> := Plaintext} = Body,
+        Plaintext = get_plaintext(Body),
         Uuid = dbmgr_uuid:time_uuid(),
         CID = conversation_id(To, From, Group),
         spawn(fun() ->
@@ -224,6 +225,9 @@ jsx_encode(Data) -> jsx:encode(Data).
 %   State = uuid:new(self()),
 %   {UUID, _NewState} = uuid:get_v1(State),
 %   list_to_binary(uuid:uuid_to_string(UUID)).
+
+get_plaintext(#{<<"plainText">> := Plaintext})  -> Plaintext;
+get_plaintext(_) -> undefined.
 
 year_month(Actime) ->
   %{{Y, M, _}, _} = calendar:gregorian_days_to_date(Actime),

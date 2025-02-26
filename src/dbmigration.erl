@@ -79,7 +79,8 @@ do_start_dbmigration(Args) ->
         Uuid = dbmgr_uuid:time_uuid(),
         CID = conversation_id(To, From, Group),
         spawn(fun() ->
-                  add_to_chat_messages_core(#{tenant_id => Tenant
+                  add_to_chat_messages_core(dbmgr_api_utils:filtered_map(
+                #{tenant_id => Tenant
                                               ,conversation_id => CID
                                               ,year_month => year_month(Actime)
                                               ,uuid => Uuid
@@ -93,7 +94,7 @@ do_start_dbmigration(Args) ->
                                               ,is_seen => IsSeen
                                               ,a_ctime => Actime
                                               ,body => base64:encode(jsx:encode(Body))
-                                              ,plaintext => Plaintext})
+                                              ,plaintext => Plaintext}))
               end),
         spawn(fun() -> add_pinned_messages(dbmgr_api_utils:filtered_map(
                                              #{conversation_id => CID

@@ -27,13 +27,13 @@ handle_cast(_Msg, State) ->
   {noreply, State}.
 
 handle_info(timeout, State) ->
-  catch start_day_by_day_migration(), 
+  catch start_day_by_day_migration(),
   {noreply, State};
 handle_info(completed, State) ->
   lager:info("completed the migration"),
   {stop, normal, State};
 handle_info({next_day_migration, StartDate, EndDate, PEndDate}, State) ->
-  lager:info("got the next day migration"),  
+  lager:info("got the next day migration"),
   catch do_start_migration(StartDate, EndDate, PEndDate ),
   {noreply, State};
 handle_info(_Info, State) ->
@@ -57,20 +57,20 @@ start_day_by_day_migration() ->
 do_start_migration(StartDate, EndDate, PEndDate) when PEndDate > EndDate ->
   %% To get data upto that day and migrate
   Data = hoolva_chat_messages:get_chat(#{a_ctime => {range, StartDate, EndDate}}),
-  R = spawn(fun() -> dbmigration:start_dbmigration(Data) end),
+  R = spawn(fun() -> dbmigration:start_dbmigration(lists:usort(Data)) end),
   lager:info("started migraton pid ~p lastdate", [R]),
   self() ! completed;
 do_start_migration(StartDate, EndDate, PEndDate) ->
   lager:info("start_date ~p pend_date ~p", [StartDate, PEndDate]),
   Data = hoolva_chat_messages:get_chat(#{a_ctime => {range, StartDate, PEndDate}}),
-  R = spawn(fun() -> dbmigration:start_dbmigration(Data) end),
+  R = spawn(fun() -> dbmigration:start_dbmigration(lists:usort(Data)) end),
   {{Y, M,D }, _} = calendar:system_time_to_universal_time(StartDate, millisecond),
   DATE = to_list(D) ++ "-" ++ to_list(M) ++ "-" ++ to_list(M) ++ "-" ++ to_list(Y),
   lager:info("started migraton pid ~p date ~p", [R, DATE]),
   erlang:send_after(10000, self(), {next_day_migration, PEndDate+1, EndDate, PEndDate + 86400000}),
   ok.
 
-  %do_start_migration(PEndDate+1, EndDate, PEndDate + 86400000).
+%do_start_migration(PEndDate+1, EndDate, PEndDate + 86400000).
 
 to_list(A) ->
   dbmgr_api_utils:to(list, A).

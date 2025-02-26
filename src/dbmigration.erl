@@ -73,10 +73,9 @@ do_start_dbmigration(Args) ->
           ,reactions := Reactions, reply_to := Replyto
           ,schedule_time := ScheduleTime, seen := Seen
           ,status := Status, tenant := Tenant
-          ,to := To, type := Type, uuid := MsgUUID})->
+          ,to := To, type := Type, uuid := _MsgUUID})->
         #{<<"plainText">> := Plaintext} = Body,
         Uuid = dbmgr_uuid:time_uuid(),
-        lager:info("3333333333333333333333333333333333333 ~p msguuid ~p",[Uuid, MsgUUID ]),
         CID = conversation_id(To, From),
         spawn(fun() ->
                   add_to_chat_messages_core(#{tenant_id => Tenant
@@ -142,7 +141,7 @@ do_start_dbmigration(Args) ->
                                                          }),
                                         add_chat_message_user_reactions(ReactionMap)
                                     end)
-                             %(Otherss) -> lager:info("got the unkown ~p",[Otherss])
+                              %(Otherss) -> lager:info("got the unkown ~p",[Otherss])
                           end, Members),
                         ReactionCountMap = dbmgr_api_utils:filtered_map(
                                              #{message_id => Uuid,
@@ -170,32 +169,32 @@ do_start_dbmigration(Args) ->
           end, Attachments),
         spawn(fun() ->
                   OtherInfoMap1 = dbmgr_api_utils:filtered_map(
-                                   #{
-                                     message_id => Uuid,
-                                     is_fcm_notification => FN,
-                                     conversation_id => CID,
-                                     schedule_time => ScheduleTime,
-                                     platform => Platform,
-                                     %edited_time => edited_time(EditedTime, Actime),
-                                     reply_to => jsx_encode(Replyto),
-                                     forwarded_from => jsx_encode(ForwardedFrom)
+                                    #{
+                                      message_id => Uuid,
+                                      is_fcm_notification => FN,
+                                      conversation_id => CID,
+                                      schedule_time => ScheduleTime,
+                                      platform => Platform,
+                                      %edited_time => edited_time(EditedTime, Actime),
+                                      reply_to => jsx_encode(Replyto),
+                                      forwarded_from => jsx_encode(ForwardedFrom)
                                      }),
                   add_chat_message_additional(OtherInfoMap1)
               end),
         lists:foreach(fun(EpochTime) ->
-          spawn(fun() -> 
-                    EpochTimeMap = dbmgr_api_utils:filtered_map(
-                                     #{uuid => dbmgr_api_utils:uuid_bin(),
-                                       message_id => Uuid,
-                                       conversation_id => CID,
-                                       edited_time => EpochTime
+                          spawn(fun() ->
+                                    EpochTimeMap = dbmgr_api_utils:filtered_map(
+                                                     #{uuid => dbmgr_api_utils:uuid_bin(),
+                                                       message_id => Uuid,
+                                                       conversation_id => CID,
+                                                       edited_time => EpochTime
 
-                                       }),
-                    add_chat_message_edit_history(EpochTimeMap)
-                end)
-             
-          end, EditedTime);
-                    
+                                                      }),
+                                    add_chat_message_edit_history(EpochTimeMap)
+                                end)
+
+                      end, EditedTime);
+
        % ReactionMap = dbmgr_api_utils:filtered_map(
        % #{uuid => dbmgr_api_utils:uuid_bin(),
        %  message_id => Uuid,
@@ -211,7 +210,7 @@ do_start_dbmigration(Args) ->
 % edited_time(EditedTime, _Actime) -> EditedTime.
 
 jsx_encode(undefined) -> undefined;
-jsx_encode(Data) -> jsx:encode(Data).  
+jsx_encode(Data) -> jsx:encode(Data).
 % add_to_kass(Args),
 %   spawn(fun() -> add_to_chat_messages_core(Args) end), %add_to_chat_messages_core(Args),
 %   add_pinned_messages(Args),
@@ -298,7 +297,7 @@ add_chat_message_additional(Args) ->
   R = dbmgr_cassandra:query(Query),
   lager:info("chat_message_additional result  ~p and query ~p", [R, Query]).
 
-add_chat_message_edit_history(Args) ->  
+add_chat_message_edit_history(Args) ->
   lager:info("chat_message_epoch_time ~p", [Args]),
   Query = dbmgr_api_utils:cassandra_put_query(chat_message_edit_history, Args),
   R = dbmgr_cassandra:query(Query),

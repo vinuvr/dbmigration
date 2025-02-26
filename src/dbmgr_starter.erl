@@ -48,7 +48,7 @@ code_change(_OldVsn, State, _Extra) ->
 
 start_day_by_day_migration() ->
   lager:info("start_month_by_month_migration"),
-  StartDate = 1690506001000,
+  StartDate = 1725930001000, %1690506001000, %% change based on the server
   PEndDate = StartDate + 86400000,
   EndDate = erlang:system_time(millisecond),
   lager:info("start_date ~p end_date ~p", [StartDate, EndDate]),

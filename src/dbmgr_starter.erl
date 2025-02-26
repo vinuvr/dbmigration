@@ -67,7 +67,7 @@ do_start_migration(StartDate, EndDate, PEndDate) ->
   {{Y, M,D }, _} = calendar:system_time_to_universal_time(StartDate, millisecond),
   DATE = to_list(D) ++ "-" ++ to_list(M) ++ "-" ++ to_list(Y),
   lager:info("started migraton pid ~p date ~p", [R, DATE]),
-  erlang:send_after(10000, self(), {next_day_migration, PEndDate+1, EndDate, PEndDate + 86400000}),
+  erlang:send_after(3000, self(), {next_day_migration, PEndDate+1, EndDate, PEndDate + 86400000}),
   ok.
 
 %do_start_migration(PEndDate+1, EndDate, PEndDate + 86400000).

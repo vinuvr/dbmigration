@@ -76,7 +76,7 @@ do_start_dbmigration(Args) ->
           ,to := To, type := Type, uuid := _MsgUUID})->
         #{<<"plainText">> := Plaintext} = Body,
         Uuid = dbmgr_uuid:time_uuid(),
-        CID = conversation_id(To, From),
+        CID = conversation_id(To, From, Group),
         spawn(fun() ->
                   add_to_chat_messages_core(#{tenant_id => Tenant
                                               ,conversation_id => CID
@@ -234,15 +234,17 @@ year_month(Actime) ->
   end.
 %io_lib:format("~p-~p", [M, Y]).
 
-conversation_id(To, From) ->
+conversation_id(To, From, false) ->
   S = lists:sort([To, From]),
   Hash = crypto:hash(sha256, io_lib:format("~p-~p", S)),
   <<A:32, B:16, C:16, D:16, E:48>> = binary:part(Hash, 0, 16),
   C1 = (C band 16#0FFF) bor (5 bsl 12),   % Apply version 5
   D1 = (D band 16#3FFF) bor (2 bsl 14),   % Apply variant
   UUID = <<A:32, B:16, C1:16, D1:16, E:48>>,
-  list_to_binary(uuid:uuid_to_string(UUID)).
-
+  list_to_binary(uuid:uuid_to_string(UUID));
+conversation_id(To, _, _) ->
+  lager:info("it is group"),
+  To.
 
 add_to_chat_messages_core(Args) ->
   %lager:info("add_to_chat_messages_core ~p", [Args]),

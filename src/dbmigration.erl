@@ -245,9 +245,9 @@ get_plaintext(_) -> undefined.
 year_month(Actime) ->
   %{{Y, M, _}, _} = calendar:gregorian_days_to_date(Actime),
   {{Y, M,_ }, _} = calendar:system_time_to_universal_time(Actime, millisecond),
-  case Y of
-    Y when Y > 10 -> "0" ++ dbmgr_api_utils:to(list, M) ++ dbmgr_api_utils:to(list, Y);
-    _ -> dbmgr_api_utils:to(list, M) ++ dbmgr_api_utils:to(list, Y)
+  case M of
+    Y when Y < 10 -> dbmgr_api_utils:to(list, Y) ++ "0" ++ dbmgr_api_utils:to(list, M);
+    _ -> dbmgr_api_utils:to(list, Y) ++ dbmgr_api_utils:to(list, M)
   end.
 %io_lib:format("~p-~p", [M, Y]).
 

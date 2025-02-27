@@ -76,25 +76,27 @@ do_start_dbmigration(Args) ->
           ,to := To, type := Type, uuid := _MsgUUID})->
         %#{<<"plainText">> := Plaintext} = Body,
         Plaintext = get_plaintext(Body),
-        Uuid = dbmgr_uuid:time_uuid(),
+        Uuid = dbmgr_uuid:time_uuid(Actime*10000),
         CID = conversation_id(To, From, Group),
+        YMN = year_month(Actime),
         spawn(fun() ->
                   add_to_chat_messages_core(dbmgr_api_utils:filtered_map(
-                #{tenant_id => Tenant
-                                              ,conversation_id => CID
-                                              ,year_month => year_month(Actime)
-                                              ,uuid => Uuid
-                                              ,sender_id => From
-                                              ,recipient_id => To
-                                              ,type => Type
-                                              ,category => Category
-                                              ,status => Status
-                                              ,is_pinned => Pinned
-                                              ,is_group => Group
-                                              ,is_seen => IsSeen
-                                              ,a_ctime => Actime
-                                              ,body => base64:encode(jsx:encode(Body))
-                                              ,plaintext => Plaintext}))
+                                              #{tenant_id => Tenant
+                                                ,conversation_id => CID
+                                                ,year_month => YMN
+                                                ,uuid => Uuid
+                                                ,sender_id => From
+                                                ,recipient_id => To
+                                                ,type => Type
+                                                ,category => Category
+                                                ,status => Status
+                                                ,is_pinned => Pinned
+                                                ,is_group => Group
+                                                ,is_seen => IsSeen
+                                                ,a_ctime => Actime
+                                                ,day => <<"ALL">>
+                                                ,body => base64:encode(jsx:encode(Body))
+                                                ,plaintext => Plaintext}))
               end),
         spawn(fun() -> add_pinned_messages(dbmgr_api_utils:filtered_map(
                                              #{conversation_id => CID
@@ -195,7 +197,17 @@ do_start_dbmigration(Args) ->
                                     add_chat_message_edit_history(EpochTimeMap)
                                 end)
 
-                      end, EditedTime);
+                      end, EditedTime),
+
+        spawn(fun() ->
+                  ChatConversationMonthMap = dbmgr_api_utils:filtered_map(
+                                               #{tenant_id => Tenant,
+                                                 conversation_id => CID,
+                                                 year_month => year_month(Actime)
+                                                }),
+                  add_chat_conversation_month(ChatConversationMonthMap) end
+
+             );
 
        % ReactionMap = dbmgr_api_utils:filtered_map(
        % #{uuid => dbmgr_api_utils:uuid_bin(),
@@ -310,6 +322,11 @@ add_chat_message_edit_history(Args) ->
   R = dbmgr_cassandra:query(Query),
   lager:info("chat_message_epoch_time result  ~p and query ~p", [R, Query]).
 
+add_chat_conversation_month(Args) ->
+  lager:info("chat_conversation_month ~p", [Args]),
+  Query = conversation_month_query(Args),
+  R = dbmgr_cassandra:query(Query),
+  lager:info("chat_conversation_month result  ~p and query ~p", [R, Query]).
 
 reactions_couter_query(#{count := Count, message_id := MsgId, emoji := Emoji}) ->
   CountStr = dbmgr_api_utils:to(list, Count),
@@ -318,3 +335,10 @@ reactions_couter_query(#{count := Count, message_id := MsgId, emoji := Emoji}) -
   "UPDATE tutorialspoint.chat_message_reaction_counts SET count = count +"
   ++ CountStr ++ " WHERE message_id = " ++ MsgIdStr ++ " AND emoji = '" ++ EmojiStr
   ++ "';".
+
+conversation_month_query(#{tenant_id := Tenant, conversation_id := CID, year_month := YMN}) ->
+  TenantIdStr = dbmgr_api_utils:to(list, Tenant),
+  CIDStr = dbmgr_api_utils:to(list, CID),
+  YMNStr = dbmgr_api_utils:to(list, YMN),
+  "UPDATE tutorialspoint.chat_conversation_months SET message_count = message_count + 1 WHERE tenant_id =" ++
+  TenantIdStr ++ " AND conversation_id = " ++ CIDStr ++ " AND year_month = '" ++ YMNStr ++ "';".

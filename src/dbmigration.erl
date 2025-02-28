@@ -96,7 +96,10 @@ do_start_dbmigration(Args) ->
                                                 ,a_ctime => Actime
                                                 ,day => <<"ALL">>
                                                 ,body => base64:encode(jsx:encode(Body))
-                                                ,plaintext => Plaintext}))
+                                                %,body => jsx:encode(Body)
+                                                ,plaintext => Plaintext
+                                                %,plaintext => base64:encode(Plaintext)
+                                                }))
               end),
         spawn(fun() -> add_pinned_messages(dbmgr_api_utils:filtered_map(
                                              #{conversation_id => CID
@@ -225,7 +228,7 @@ do_start_dbmigration(Args) ->
 
 jsx_encode(undefined) -> undefined;
 jsx_encode(Data) -> jsx:encode(Data).
-% add_to_kass(Args),
+%% add_to_kass(Args),
 %   spawn(fun() -> add_to_chat_messages_core(Args) end), %add_to_chat_messages_core(Args),
 %   add_pinned_messages(Args),
 %   add_delivered_to(Args),
@@ -239,7 +242,8 @@ jsx_encode(Data) -> jsx:encode(Data).
 %   {UUID, _NewState} = uuid:get_v1(State),
 %   list_to_binary(uuid:uuid_to_string(UUID)).
 
-get_plaintext(#{<<"plainText">> := Plaintext})  -> base64:encode(Plaintext);
+get_plaintext(#{<<"plainText">> := PlaintextBin})  -> 
+  dbmgr_api_utils:remove_non_ascii(PlaintextBin);
 get_plaintext(_) -> undefined.
 
 year_month(Actime) ->
@@ -264,7 +268,7 @@ conversation_id(To, _, _) ->
   To.
 
 add_to_chat_messages_core(Args) ->
-  %lager:info("add_to_chat_messages_core ~p", [Args]),
+  %ager:info("add_to_chat_messages_core ~p", [Args]),
   Query = dbmgr_api_utils:cassandra_put_query(chat_messages_core, Args),
   R = dbmgr_cassandra:query(Query),
   lager:info("add_to_chat_message result ~p and query ~p", [R, Query]).

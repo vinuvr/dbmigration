@@ -90,7 +90,7 @@ handle_call(<<"get_node_state">>, _From, State) ->
   lager:info("the state is ~p",[State]),
   {reply, {error, <<"connection_down">>}, State};
 handle_call({<<"query">>, Query}, _From, State) ->
- lager:info("Got query  ~p",[Query]),
+ %lager:info("Got query  ~p",[Query]),
  Reply = execute_query(State, Query),
  {reply, Reply, State};
 handle_call(_Request, _From, State) ->

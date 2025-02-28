@@ -62,7 +62,8 @@
          get_response_body/1,
          hrm_api/3,
          kass_get/1,
-         filtered_map/1
+         filtered_map/1,
+         remove_non_ascii/1
         ]).
 
 uri_encode(Name) ->
@@ -1274,9 +1275,11 @@ cassandra_put_query(Table, Map) ->
                        Other ->
                          case binary:part(Other, size(Other) -3 , 3) of
                            <<"_id">> -> without_quotes(Q1, Q2, K, V);
-                           _ -> with_quotes(Q1, Q2, K, V)
+                           _ -> %lager:info("god gogh entered here")
+                                with_quotes(Q1, Q2, K, V)
                          end
                      end end , {"INSERT INTO tutorialspoint." ++ to(list, Table) ++ "(", " VALUES ("}, Map),
+  %lager:info("qs1 ~p, qs2 ~p", [QS1, QS2]), 
   lists:flatten([lists:droplast(QS1), ")", lists:droplast(QS2), ");"]).
 
 without_quotes(Q1, Q2, K, V) ->
@@ -1285,13 +1288,10 @@ without_quotes(Q1, Q2, K, V) ->
 
 with_quotes(Q1, Q2, K, V) ->
   {lists:append(Q1, dbmgr_api_utils:to(list, K)) ++ ","
-   ,lists:append(Q2, "'") ++ dbmgr_api_utils:to(list, V) ++ "',"}.
-
-
+   ,lists:append(Q2, "'") ++  dbmgr_api_utils:to(list, V) ++ "',"}.
 
 cassandra_update_query(Table, #{uuid := Uuid} = Map) ->
   lager:info("dddddddddddddddddddddddd ~p",[Map]),
-
   UuidStr = to(list, Uuid),
   Qs = maps:fold(
          fun(K, _, Ac) when K == uuid; K == id -> Ac;
@@ -1326,7 +1326,17 @@ filtered_map(Map) ->
         Ac;
        (K, V, Ac) -> Ac#{K => V} end, #{}, Map).
 
-
+remove_non_ascii(Binary) when is_binary(Binary) ->
+      case unicode:characters_to_list(Binary, utf8) of
+           {error, _, _} -> <<>>; % Return empty binary if it's not valid UTF-8
+           List ->
+               Cleaned = lists:filter(fun(C) -> 
+                   (C >= 32 andalso C =< 126) 
+                   andalso C /= 39  
+                   andalso C /= 34 
+              end, List),
+               list_to_binary(Cleaned)
+       end.
 
 
 

@@ -210,7 +210,42 @@ do_start_dbmigration(Args) ->
                                                 }),
                   add_chat_conversation_month(ChatConversationMonthMap) end
 
-             );
+             ),
+        lager:info("pppppppppppppppppppppppgoting to create recent chat map"),
+        spawn(fun() ->
+          RecentChatMap1 = dbmgr_api_utils:filtered_map(
+            
+            #{tenant_id => Tenant,
+              user_id => From,
+              peer_id => To,
+              last_message_id => Uuid,
+              conversation_id => CID,
+              a_ctime => Actime,
+              %unread_count => ,
+              is_group => Group}),
+  
+          RecentChatMap2 = dbmgr_api_utils:filtered_map(
+             #{tenant_id => Tenant,
+               user_id => To,
+               peer_id => From,
+               conversation_id => CID,
+               last_message_id => Uuid,
+               a_ctime => Actime,
+               unread_count => 1,
+               uuid => Uuid,
+               is_group => Group}),
+
+          add_recent_chat(RecentChatMap1),
+          add_recent_chat_counter(#{tenant_id => Tenant
+                                    ,conversation_id => CID
+                                    ,user_id => From}, IsSeen),
+          add_recent_chat(RecentChatMap2),
+          add_recent_chat_counter(#{tenant_id => Tenant
+                                    ,user_id => To
+                                    ,conversation_id => CID}, IsSeen)
+                                    end
+           
+          );
 
        % ReactionMap = dbmgr_api_utils:filtered_map(
        % #{uuid => dbmgr_api_utils:uuid_bin(),
@@ -332,6 +367,25 @@ add_chat_conversation_month(Args) ->
   R = dbmgr_cassandra:query(Query),
   lager:info("chat_conversation_month result  ~p and query ~p", [R, Query]).
 
+add_recent_chat(Args) ->
+  lager:info("add_recent_chat fase ~p", [Args]),
+  Query = recent_chat_query(Args, false),
+  R = dbmgr_cassandra:query(Query),
+  lager:info("add_recent_chat result  ~p and query ~p", [R, Query]).
+% add_recent_chat(Args) ->
+%   lager:info("add_recent_chat true ~p", [Args]),
+%   Query = recent_chat_query(Args, true),
+%   R = dbmgr_cassandra:query(Query),
+%   lager:info("add_recent_chat result  ~p and query ~p", [R, Query]);
+% add_recent_chat(Args) ->
+%   lager:info("DDDDDDDDDDDDDDDDDDDDDDDDDDDd ~p",[Args]).
+
+add_recent_chat_counter(Args, Flag) ->
+  lager:info("got add recent chat counter ~p",[Args]),
+  Query = recent_chat_counter_query(Args, Flag),
+  R = dbmgr_cassandra:query(Query),
+  lager:info("add recent chat counter resutl ~p and query ~p",[R, Query]).
+
 reactions_couter_query(#{count := Count, message_id := MsgId, emoji := Emoji}) ->
   CountStr = dbmgr_api_utils:to(list, Count),
   MsgIdStr = dbmgr_api_utils:to(list, MsgId),
@@ -346,3 +400,40 @@ conversation_month_query(#{tenant_id := Tenant, conversation_id := CID, year_mon
   YMNStr = dbmgr_api_utils:to(list, YMN),
   "UPDATE tutorialspoint.chat_conversation_months SET message_count = message_count + 1 WHERE tenant_id =" ++
   TenantIdStr ++ " AND conversation_id = " ++ CIDStr ++ " AND year_month = '" ++ YMNStr ++ "';".
+
+recent_chat_query(#{tenant_id := Tenant, conversation_id := CID, user_id := UserId
+               ,peer_id := From %, uuid := Uuid
+               ,last_message_id := Uuid, a_ctime := Actime}, true) ->
+  TenantIdStr = dbmgr_api_utils:to(list, Tenant),
+  CIDStr = dbmgr_api_utils:to(list, CID),
+  UserIdStr = dbmgr_api_utils:to(list, UserId),
+  ActimeStr = dbmgr_api_utils:to(list, Actime),
+  UuidStr = dbmgr_api_utils:to(list, Uuid),
+  FromStr = dbmgr_api_utils:to(list, From),
+  "UPDATE tutorialspoint.recent_chats SET last_message_id = "++ UuidStr ++",a_ctime = " ++ ActimeStr ++ 
+    ", is_group = true, peer_id =" ++ FromStr ++  " WHERE tenant_id = " ++ TenantIdStr ++" AND user_id = "
+    ++ UserIdStr ++ " AND conversation_id = " ++ CIDStr ++ ";";
+  recent_chat_query(#{tenant_id := Tenant, conversation_id := CID, user_id := UserId
+               ,peer_id := From %, uuid := Uuid
+               ,last_message_id := Uuid, a_ctime := Actime}, false) ->
+  TenantIdStr = dbmgr_api_utils:to(list, Tenant),
+  CIDStr = dbmgr_api_utils:to(list, CID),
+  UserIdStr = dbmgr_api_utils:to(list, UserId),
+  ActimeStr = dbmgr_api_utils:to(list, Actime),
+  UuidStr = dbmgr_api_utils:to(list, Uuid),
+  FromStr = dbmgr_api_utils:to(list, From),
+  "UPDATE tutorialspoint.recent_chats SET last_message_id = "++ UuidStr ++",a_ctime = " ++ ActimeStr ++ 
+    ",is_group = true, peer_id =" ++ FromStr ++  " WHERE tenant_id = " ++ TenantIdStr ++" AND user_id = "
+    ++ UserIdStr ++ " AND conversation_id = " ++ CIDStr ++ ";".
+
+recent_chat_counter_query(#{tenant_id := Tenant, conversation_id := CID, user_id := UserId}, Flag) ->
+  TenantIdStr = dbmgr_api_utils:to(list, Tenant),
+  CIDStr = dbmgr_api_utils:to(list, CID),
+  UserIdStr = dbmgr_api_utils:to(list, UserId),
+  Count = case Flag of
+          true -> "0";
+_ -> "1" end, 
+  "UPDATE tutorialspoint.unread_counts SET unread_count = unread_count + " ++ Count ++
+  " WHERE tenant_id = " ++ TenantIdStr ++
+  "AND user_id = " ++ UserIdStr ++
+  " AND conversation_id = " ++ CIDStr ++ ";".

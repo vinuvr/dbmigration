@@ -402,7 +402,7 @@ conversation_month_query(#{tenant_id := Tenant, conversation_id := CID, year_mon
   TenantIdStr ++ " AND conversation_id = " ++ CIDStr ++ " AND year_month = '" ++ YMNStr ++ "';".
 
 recent_chat_query(#{tenant_id := Tenant, conversation_id := CID, user_id := UserId
-               ,peer_id := From %, uuid := Uuid
+               ,peer_id := From ,is_group := IsGroup %, uuid := Uuid
                ,last_message_id := Uuid, a_ctime := Actime}, true) ->
   TenantIdStr = dbmgr_api_utils:to(list, Tenant),
   CIDStr = dbmgr_api_utils:to(list, CID),
@@ -410,11 +410,12 @@ recent_chat_query(#{tenant_id := Tenant, conversation_id := CID, user_id := User
   ActimeStr = dbmgr_api_utils:to(list, Actime),
   UuidStr = dbmgr_api_utils:to(list, Uuid),
   FromStr = dbmgr_api_utils:to(list, From),
+  GroupStr = dbmgr_api_utils:to(list, IsGroup),
   "UPDATE tutorialspoint.recent_chats SET last_message_id = "++ UuidStr ++",a_ctime = " ++ ActimeStr ++ 
-    ", is_group = true, peer_id =" ++ FromStr ++  " WHERE tenant_id = " ++ TenantIdStr ++" AND user_id = "
+    ", is_group = " ++ GroupStr ++", peer_id =" ++ FromStr ++  " WHERE tenant_id = " ++ TenantIdStr ++" AND user_id = "
     ++ UserIdStr ++ " AND conversation_id = " ++ CIDStr ++ ";";
   recent_chat_query(#{tenant_id := Tenant, conversation_id := CID, user_id := UserId
-               ,peer_id := From %, uuid := Uuid
+               ,peer_id := From , is_group := IsGroup
                ,last_message_id := Uuid, a_ctime := Actime}, false) ->
   TenantIdStr = dbmgr_api_utils:to(list, Tenant),
   CIDStr = dbmgr_api_utils:to(list, CID),
@@ -422,8 +423,9 @@ recent_chat_query(#{tenant_id := Tenant, conversation_id := CID, user_id := User
   ActimeStr = dbmgr_api_utils:to(list, Actime),
   UuidStr = dbmgr_api_utils:to(list, Uuid),
   FromStr = dbmgr_api_utils:to(list, From),
+  GroupStr = dbmgr_api_utils:to(list, IsGroup),
   "UPDATE tutorialspoint.recent_chats SET last_message_id = "++ UuidStr ++",a_ctime = " ++ ActimeStr ++ 
-    ",is_group = true, peer_id =" ++ FromStr ++  " WHERE tenant_id = " ++ TenantIdStr ++" AND user_id = "
+    ",is_group = " ++ GroupStr ++", peer_id =" ++ FromStr ++  " WHERE tenant_id = " ++ TenantIdStr ++" AND user_id = "
     ++ UserIdStr ++ " AND conversation_id = " ++ CIDStr ++ ";".
 
 recent_chat_counter_query(#{tenant_id := Tenant, conversation_id := CID, user_id := UserId}, Flag) ->
